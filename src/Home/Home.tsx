@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, SafeAreaView, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, Modal } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 import { format } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 
+import { ModalContent } from '../Modal/ModalContent';
 import userApi from '../../api/userApi';
 
 import styles from "./styles";
 
 export function Home() {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState();
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     getUsers();
@@ -32,6 +34,16 @@ export function Home() {
       })
   }
 
+  function handleCardClick(item) {
+    setSelectedUser(item);
+    setShowModal(true);
+  }
+
+  function handleCloseModal(closingModal: boolean) {
+    if (closingModal) 
+      setShowModal(false);
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pacientes</Text>
@@ -49,13 +61,13 @@ export function Home() {
 
         <MaterialIcons name="filter-alt" size={35} color="white" style={styles.filterIcon} />
       </View>
-       {users.length > 0 && (
+      {users.length > 0 && (
         <FlatList
           style={styles.cardContainer}
           data={users}
           keyExtractor={(item) => item.email}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={() => handleCardClick(item)}>
               <Image style={styles.avatar} source={{ uri: `${item.picture.large}` }} />
               <View style={styles.patientInfo}>
                 <Text style={styles.textCard}>{`${item.name.title} ${item.name.last}`}</Text>
@@ -65,7 +77,7 @@ export function Home() {
                   <Text style={styles.textCard}>{format(new Date(item.dob.date), "dd'/'MM'/'yyyy", { locale: ptBR })}</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           onEndReached={handleLoadingMore}
           onEndReachedThreshold={0.1}
@@ -75,9 +87,21 @@ export function Home() {
               <MaterialIcons name="refresh" size={30} color="black" />
               <Text style={{ fontSize: 25 }}>Loading more...</Text>
             </View>
-          } 
+          }
         />
       )}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={showModal}
+      >
+        {selectedUser && (
+          <ModalContent
+            user={selectedUser}
+            onCloseModal={handleCloseModal}
+          />
+        )}
+      </Modal>
     </View>
   )
 }
